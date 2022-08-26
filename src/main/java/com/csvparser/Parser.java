@@ -20,19 +20,21 @@ public class Parser {
     public static void main(String[] args) throws Exception {
         ConfigurableApplicationContext context = SpringApplication.run(Parser.class, args);
         if (args.length > 2) {
-            Map<String, Long> m = calculateScoreFromInput(args[0]);
-
-            AthleteScoreRepository repository = context.getBean(AthleteScoreRepository.class);
-
-            List<AthleteScore> athleteScoreList = m.entrySet().stream().map(x -> AthleteScore.builder()
-                    .athleteName(toPascalCase(x.getKey()))
-                    .totalScore(x.getValue())
-                    .build()).collect(Collectors.toList());
-
-            repository.saveAll(athleteScoreList);
-
-            outputStatsToFile(args[2], m);
+            Map<String, Long> data = calculateScoreFromInput(args[0]);
+            insertToDB(data, context);
+            outputStatsToFile(args[2], data);
         }
+    }
+
+    private static void insertToDB(Map<String, Long> data, ConfigurableApplicationContext context) {
+        AthleteScoreRepository repository = context.getBean(AthleteScoreRepository.class);
+
+        List<AthleteScore> athleteScoreList = data.entrySet().stream().map(x -> AthleteScore.builder()
+                .athleteName(toPascalCase(x.getKey()))
+                .totalScore(x.getValue())
+                .build()).collect(Collectors.toList());
+
+        repository.saveAll(athleteScoreList);
     }
 
     // calculate each athlete total score from input
@@ -88,6 +90,7 @@ public class Parser {
             if (str.charAt(i) == ' ') {
                 continue;
             }
+            //if previous character is space, character i should be uppercase
             if (str.charAt(i - 1) == ' ') {
                 res.add(Character.toUpperCase(str.charAt(i)));
                 continue;
